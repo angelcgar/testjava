@@ -37,6 +37,8 @@ public class ZonaFitForma extends JFrame {
                 cargarClienteSeleccionado();
             }
         });
+        eliminarButton.addActionListener(actionEvent -> eliminarCliente());
+        limpiarButton.addActionListener(actionEvent -> limpiarFormulario());
     }
 
     private void iniciarForma() {
@@ -51,10 +53,20 @@ public class ZonaFitForma extends JFrame {
 
     private void createUIComponents() {
         // TODO: place custom component creation code here
-        this.tablaModeloCliente = new DefaultTableModel(0, 4);
+//        this.tablaModeloCliente = new DefaultTableModel(0, 4);
+//        Evitamos la edicion de las celdas de la tabla
+        this.tablaModeloCliente = new DefaultTableModel(0, 4) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
         String[] cabeseros = {"id", "Nambre", "Apellido", "Menbresia"};
         this.tablaModeloCliente.setColumnIdentifiers(cabeseros);
         this.clientesTabla = new JTable(tablaModeloCliente);
+//        Restringimos la seleccion multiple
+        this.clientesTabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         // Formatear listado de clientes
         listarClientes();
     }
@@ -94,6 +106,22 @@ public class ZonaFitForma extends JFrame {
             mostrarMensaje("Se agrego el nuevo cliente");
         else
             mostrarMensaje("Se actualizo el cliente");
+        limpiarFormulario();
+        listarClientes();
+    }
+
+    private void eliminarCliente() {
+        var renglon = clientesTabla.getSelectedRow();
+        if (renglon == -1) {
+            mostrarMensaje("Seleccione un cliente para eliminar");
+            return;
+        }
+        var idClienteStr = clientesTabla.getModel().getValueAt(renglon, 0).toString();
+        this.idCliente = Integer.parseInt(idClienteStr);
+        var cliente = new Cliente();
+        cliente.setId(this.idCliente);
+        this.clienteServicio.eliminarCliente(cliente);
+        mostrarMensaje("Se elimino el cliente con Id: " + idCliente);
         limpiarFormulario();
         listarClientes();
     }
