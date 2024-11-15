@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 @Component
 public class ZonaFitForma extends JFrame {
@@ -21,14 +23,21 @@ public class ZonaFitForma extends JFrame {
     private JButton limpiarButton;
     IClienteServicio clienteServicio;
     private DefaultTableModel tablaModeloCliente;
+    private Integer idCliente;
 
     @Autowired
     public ZonaFitForma(ClienteServicio clienterServicio) {
         this.clienteServicio = clienterServicio;
         iniciarForma();
         guardarButton.addActionListener(actionEvent -> guardarCliente());
+        clientesTabla.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                cargarClienteSeleccionado();
+            }
+        });
     }
-
 
     private void iniciarForma() {
         setContentPane(panelPrincipal);
@@ -79,19 +88,38 @@ public class ZonaFitForma extends JFrame {
         var name = nombreTexto.getText();
         var lastname = apellidoTexto.getText();
         var membership = Integer.parseInt(membresiaTexto.getText());
-        var cliente = new Cliente();
-        cliente.setName(name);
-        cliente.setLastname(lastname);
-        cliente.setMembership(membership);
-        this.clienteServicio.guardarCliente(cliente); // inserta en bd
+        var cliente = new Cliente(this.idCliente, name, lastname, membership);
+        this.clienteServicio.guardarCliente(cliente); // inserta o modificar en bd
+        if (this.idCliente == null)
+            mostrarMensaje("Se agrego el nuevo cliente");
+        else
+            mostrarMensaje("Se actualizo el cliente");
         limpiarFormulario();
         listarClientes();
+    }
+
+    private void cargarClienteSeleccionado() {
+        var renglon = clientesTabla.getSelectedRow();
+        if (renglon != -1) { // -1 no se a seleccionado un registro
+            var id = clientesTabla.getModel().getValueAt(renglon, 0).toString();
+            this.idCliente = Integer.parseInt(id);
+            var name = clientesTabla.getModel().getValueAt(renglon, 1).toString();
+            this.nombreTexto.setText(name);
+            var lastname = clientesTabla.getModel().getValueAt(renglon, 2).toString();
+            this.apellidoTexto.setText(lastname);
+            var membership = clientesTabla.getModel().getValueAt(renglon, 3).toString();
+            this.membresiaTexto.setText(membership);
+        }
     }
 
     private void limpiarFormulario() {
         nombreTexto.setText("");
         apellidoTexto.setText("");
         membresiaTexto.setText("");
+//        limpiamos el is cliente seleccionado
+        this.idCliente = null;
+//        Deseleccionamos el registro de la tabla
+        this.clientesTabla.getSelectionModel().clearSelection();
     }
 
     private void mostrarMensaje(String mesaje) {
